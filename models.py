@@ -9,10 +9,9 @@ class Student(db.Model):
     science2 = db.Column(db.String(120), unique=False, nullable=False)
     science3 = db.Column(db.String(120), unique=False, nullable=False)
 
-    graduation_year = db.Column(db.Integer, unique=False, nullable=False)
-    group_num = db.Column(db.Integer, unique=False, nullable=False, default=-1)
+    group_num = db.Column(db.Integer, unique=False, nullable=False, default=0)
 
 
     def __repr__(self):
-        return f"{self.name} ({self.science1}, {self.science2}, {self.science3})" 
+        return f"{self.name} ({self.science1}, {self.science2}, {self.science3}) (Group {self.group_num})" 
     

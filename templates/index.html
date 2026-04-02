@@ -7,12 +7,12 @@
     <p>This is a tool to create diverse groups for the IB DP Science Group 4 Project</p>
 
 
-    <p>If you are a student, add yourself <a href="{{ url_for('form_add') }}">here</a>!</p>
+    <p>If you are a student, add yourself <a href="{{ url_for('form_add_student') }}">here</a>!</p>
 
 
-    <p>If you are a teacher, click <a href="{{ url_for('form_report') }}">here</a> to view the report!</p>
+    <p>If you are a teacher, click <a href="{{ url_for('generate_groups') }}">here</a> to generate the groups!</p>
 
-    <p>or click <a href="{{ url_for('all') }}">here</a> to view all students!
+    <p>or click <a href="{{ url_for('edit_groups') }}">here</a> to view all students and edit the groups!
 	
 
 {% endblock %}

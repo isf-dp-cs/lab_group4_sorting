@@ -1,8 +1,7 @@
 import random
-from collections import Counter
 
 def diversity_score(group):
-    _TRAITS = ['science1', 'science2', 'science3']
+    TRAITS = ['science1', 'science2', 'science3']
     score = 0
     # Compare every student to every other student in the group
     for i in range(len(group)):
@@ -13,8 +12,8 @@ def diversity_score(group):
             student_2 = group[j]
             
             # Check every trait for a match
-            for k in range(len(_TRAITS)):
-                trait_name = _TRAITS[k]
+            for k in range(len(TRAITS)):
+                trait_name = TRAITS[k]
                 
                 val_1 = getattr(student_1, trait_name)
                 val_2 = getattr(student_2, trait_name)
@@ -25,6 +24,7 @@ def diversity_score(group):
                         score -= 1
                         
     return score
+
 
 
 def maybe_swap(group_1, group_2):

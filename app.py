@@ -1,12 +1,14 @@
 # to run the server: 
 # # flask --app app.py --debug run
 
-from flask import Flask, request, render_template, url_for, redirect, session, flash, get_flashed_messages
+from flask import Flask, request, render_template, url_for, redirect, session, flash, get_flashed_messages, request
 from models import db, Student  # Import from your other file
 import secrets
-from forms import StudentForm, ReportForm
+from forms import StudentForm, GenerateGroupsForm
 from random import shuffle
 from helpers import *
+from sqlalchemy import text
+
 
 app = Flask(__name__, static_url_path=f'/')
 app.secret_key = secrets.token_hex(32)  # Required for CSRF protection
@@ -24,18 +26,70 @@ def index():
     return render_template('index.html')
 
 
-@app.route("/all", methods=['GET'])
-def all():
-    # Querying the database
-    students = Student.query.all()
+@app.route(f"/edit_groups", methods=['GET', 'POST'])
+def edit_groups():
+    # students = Student.query.order_by(Student.group_num).all()
+
+    students = db.session.execute(text("Select * from student order by group_num"))
+
+    max_groups = len(db.session.execute(text("Select group_num from student group by group_num")).fetchall())
+    max_groups = db.session.execute(text("Select COUNT(DISTINCT group_num) as count from student")).fetchone()[0]
+
+    # print('MAX', max_groups.fetchone()[0])
+
+    students_ordered = []
+    for i in range(max_groups):
+        empty_group_list = []
+        students_ordered.append(empty_group_list)
+
+    for student in students:
+        students_ordered[student.group_num].append(student)
+        
+
+    group_metrics = {} # Stores {Group_ID: Score}
+
+    for i in range(len(students_ordered)):
+        group = students_ordered[i]
+
+        sciences_present = {}
+        
+        for student in group:
+            for trait in ['science1', 'science2', 'science3']:
+                val = getattr(student, trait)
+                # print(val)
+                if val and val != "None":  # Only add if it's not None or empty
+                    if val in sciences_present:
+                        sciences_present[val] += 1
+                    else:
+                        sciences_present[val] = 1
+                    
+        group_metrics[i] = {
+            "sciences": sciences_present # Sorted alphabetically for the UI
+        }
+
+    if request.method == 'POST':
+        if request.form: 
+            data = request.form
+            
+            for key, val in data.items():
+                student = db.session.get(Student, key)
+                student.group_num = val
+
+                db.session.commit()
+            
+            return redirect(url_for('edit_groups'))
+
+
     return render_template(
-            'all_students.html', 
+            'edit_groups.html', 
             students = students,
-           )
+            students_ordered=students_ordered,
+            metrics=group_metrics
+            )
 
 
-@app.route(f"/add", methods=['GET', 'POST'])
-def form_add():
+@app.route(f"/add_student", methods=['GET', 'POST'])
+def form_add_student():
     form = StudentForm()
 
     if request.method == 'POST':
@@ -46,8 +100,7 @@ def form_add():
                 name=data['name'], 
                 science1=data['science1'], 
                 science2=data['science2'], 
-                science3=data['science3'], 
-                graduation_year=data['graduation_year'])
+                science3=data['science3'])
             
             db.session.add(new_student)
             db.session.commit()
@@ -59,46 +112,64 @@ def form_add():
             'form_add.html', 
             form = form)
 
-@app.route(f"/report_config", methods=['GET', 'POST'])
-def form_report():
-    form = ReportForm()
+@app.route(f"/generate_groups", methods=['GET', 'POST'])
+def generate_groups():
+    form = GenerateGroupsForm()
+
 
     if request.method == 'POST':
+    
         if form.validate_on_submit(): 
-            data = form.data       
-            print(data['num_groups'])
-            return redirect(url_for('report', num_groups = data['num_groups']))
+            if form.submit.data:
+                return redirect(url_for('edit_groups'))    
+            
+            if form.generate.data:
+                data = form.data       
+                students = Student.query.all()
+
+                optimized_groups_list = assign_to_groups(students, data['num_groups'])
+
+
+                group_metrics = {} # Stores {Group_ID: Score}
+
+                for i in range(len(optimized_groups_list)):
+                    group = optimized_groups_list[i]
+
+                    sciences_present = {}
+                    
+
+                    for student in group:
+                        student.group_num = i
+
+                        for trait in ['science1', 'science2', 'science3']:
+                            val = getattr(student, trait)
+                            # print(val)
+                            if val and val != "None":  # Only add if it's not None or empty
+                                if val in sciences_present:
+                                    sciences_present[val] += 1
+                                else:
+                                    sciences_present[val] = 1
+                                
+                    group_metrics[i] = {
+                        "sciences": sciences_present # Sorted alphabetically for the UI
+                    }
+
+                    db.session.commit()
+
+
+                return render_template(
+                    'generate_groups.html', 
+                    form = form,
+                    metrics=group_metrics,
+                    optimized_groups_list=optimized_groups_list, 
+                )
+            
+        
 
     return render_template(
-            'form_report.html', 
+            'generate_groups.html', 
             form = form)
 
-
-@app.route("/report/<int:num_groups>", methods=['GET'])
-def report(num_groups):
-    # Querying the database
-    students = Student.query.all()
-
-    optimized_groups_list = assign_to_groups(students, num_groups)
-
-
-    group_metrics = {} # Stores {Group_ID: Score}
-
-    for i in range(len(optimized_groups_list)):
-        group = optimized_groups_list[i]
-        group_metrics[i] = diversity_score(group)
-
-        for student in group:
-            student.group_num = i
-    
-    db.session.commit()
-
-    
-    return render_template(
-            'report.html', 
-            metrics=group_metrics,
-            optimized_groups_list=optimized_groups_list
-           )
 
 if __name__ == '__main__': 
     app.run(debug=True, port=5000)
