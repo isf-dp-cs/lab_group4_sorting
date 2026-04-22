@@ -6,8 +6,8 @@ class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=False, nullable=False)
     science1 = db.Column(db.String(120), unique=False, nullable=False)
-    science2 = db.Column(db.String(120), unique=False, nullable=False)
-    science3 = db.Column(db.String(120), unique=False, nullable=False)
+    science2 = db.Column(db.String(120), unique=False, nullable=True)
+    science3 = db.Column(db.String(120), unique=False, nullable=True)
 
     group_num = db.Column(db.Integer, unique=False, nullable=False, default=0)
 
