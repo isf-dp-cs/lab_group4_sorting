@@ -3,6 +3,7 @@
 
 from flask import Flask, request, render_template, url_for, redirect, request
 from models import db, Student  # Import from your other file
+import secrets
 from forms import StudentForm, GenerateGroupsForm
 from helpers import *
 from sqlalchemy import text
