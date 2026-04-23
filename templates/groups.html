@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}	
+	<h1>Groups:</h1>
+
+    <div class="groups-container">
+        {% for group in students_ordered %}
+
+
+        <div class="column">
+
+            <h3>Group {{loop.index-1}}</h3>
+
+            <ul>
+                {% for science, count in metrics[loop.index-1]['sciences'].items() %}
+                    <li>{{science}} {{count}}</li>
+                {% endfor %}
+            </ul>
+
+            <hr>
+
+            {% for student in group %}
+                    <p>{{student.name}} ({{student.science1}}, {{student.science2}}, {{student.science3}})</p>
+            {% endfor %}
+               
+        </div>
+        {% endfor %}
+
+    </div>
+{% endblock %}

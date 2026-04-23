@@ -25,8 +25,56 @@ def index():
     return render_template('index.html')
 
 
-@app.route(f"/edit_groups", methods=['GET', 'POST'])
-def edit_groups():
+@app.route("/groups", methods=['GET'])
+def groups():
+    students = db.session.execute(text("Select * from student order by group_num"))
+
+    max_groups = len(db.session.execute(text("Select group_num from student group by group_num")).fetchall())
+    max_groups = db.session.execute(text("Select COUNT(DISTINCT group_num) as count from student")).fetchone()[0]
+
+    # print('MAX', max_groups.fetchone()[0])
+
+    students_ordered = []
+    for i in range(max_groups):
+        empty_group_list = []
+        students_ordered.append(empty_group_list)
+
+    for student in students:
+        students_ordered[student.group_num].append(student)
+        
+
+    group_metrics = {} # Stores {Group_ID: Score}
+
+    group_metrics = {} # Stores {Group_ID: Score}
+
+    for i in range(len(students_ordered)):
+        group = students_ordered[i]
+
+        sciences_present = {}
+        
+        for student in group:
+            for trait in ['science1', 'science2', 'science3']:
+                val = getattr(student, trait)
+                # print(val)
+                if val and val != "None":  # Only add if it's not None or empty
+                    if val in sciences_present:
+                        sciences_present[val] += 1
+                    else:
+                        sciences_present[val] = 1
+                    
+        group_metrics[i] = {
+            "sciences": sciences_present # Sorted alphabetically for the UI
+        }
+    return render_template(
+        'groups.html', 
+        students = students,
+        students_ordered=students_ordered,
+        metrics=group_metrics)
+
+
+
+@app.route(f"/groups/edit", methods=['GET', 'POST'])
+def groups_edit():
     # students = Student.query.order_by(Student.group_num).all()
 
     students = db.session.execute(text("Select * from student order by group_num"))
@@ -76,11 +124,11 @@ def edit_groups():
 
                 db.session.commit()
             
-            return redirect(url_for('edit_groups'))
+            return redirect(url_for('groups_edit'))
 
 
     return render_template(
-            'edit_groups.html', 
+            'groups_edit.html', 
             students = students,
             students_ordered=students_ordered,
             metrics=group_metrics
@@ -111,8 +159,8 @@ def form_add_student():
             'form_add.html', 
             form = form)
 
-@app.route(f"/generate_groups", methods=['GET', 'POST'])
-def generate_groups():
+@app.route(f"/groups/generate", methods=['GET', 'POST'])
+def groups_generate():
     form = GenerateGroupsForm()
 
 
@@ -157,7 +205,7 @@ def generate_groups():
 
 
                 return render_template(
-                    'generate_groups.html', 
+                    'groups_generate.html', 
                     form = form,
                     metrics=group_metrics,
                     optimized_groups_list=optimized_groups_list, 
@@ -166,7 +214,7 @@ def generate_groups():
         
 
     return render_template(
-            'generate_groups.html', 
+            'groups_generate.html', 
             form = form)
 
 

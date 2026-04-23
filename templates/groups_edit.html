@@ -4,7 +4,7 @@
 	<h1>Edit Groups:</h1>
 
 
-    <form method="POST" action="{{ url_for('edit_groups') }}">
+    <form method="POST" action="{{ url_for('groups_edit') }}">
         <div class="groups-container">
             {% for group in students_ordered %}
 
@@ -40,7 +40,5 @@
 
 
     </form>
-
-
 
 {% endblock %}
