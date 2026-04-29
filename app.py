@@ -168,7 +168,7 @@ def groups_generate():
     
         if form.validate_on_submit(): 
             if form.submit.data:
-                return redirect(url_for('edit_groups'))    
+                return redirect(url_for('groups'))    
             
             if form.generate.data:
                 data = form.data       
